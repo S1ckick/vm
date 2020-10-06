@@ -1,13 +1,13 @@
 //
-//  matrix.hpp
+//  structsOperations.hpp
 //  simulation
 //
 //  Created by Максим on 24.09.2020.
 //  Copyright © 2020 Максим. All rights reserved.
 //
 
-#ifndef matrix_hpp
-#define matrix_hpp
+#ifndef structsOperations_hpp
+#define structsOperations_hpp
 
 struct quaternion{
     double r;
@@ -55,6 +55,4 @@ quaternion normalize(const quaternion & q);
 quaternion matrix_to_quaternion(const matrix &m);
 quaternion mult_quat_to_quat(const quaternion & q1, const quaternion & q2);
 
-
-
-#endif /* matrix_hpp */
+#endif /* structsOperations_hpp */

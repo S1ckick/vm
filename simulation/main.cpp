@@ -8,12 +8,14 @@
 
 #define GL_SILENCE_DEPRECATION
 #include <iostream>
+#include <iomanip>
 #include <GL/glew.h>
 #include <GLUT/glsmap.h>
 #include <GLUT/GLUT.h>
 #include <GLFW/glfw3.h>
 
-#include "matrix.hpp"
+#include "structsOperations/structsOperations.hpp"
+#include "RigidBody/RigidBody.hpp"
 
 #include <cstdio>
 #include <math.h>
@@ -26,105 +28,72 @@ namespace{
 
 GLFWwindow* initWindow(const int resX, const int resY);
 void controls(GLFWwindow* window, int key, int scancode, int action, int mods);
-void drawCube();
-matrix Star(triple a);
-void InitStates();
-void drawCone();
-void drawCylinder();
 void drawBlock();
 
-void rotationMatrix(quaternion &q, GLfloat *mat){
-    mat[0] = 1-2*q.j*q.j-2*q.k*q.k;
-    mat[1] = 2*q.i*q.j-2*q.r*q.k;
-    mat[2] = 2*q.i*q.k+2*q.r*q.j;
-    
-    mat[3] = 2*q.i*q.j+2*q.r*q.k;
-    mat[4] = 1-2*q.i*q.i-2*q.k*q.k;
-    mat[5] = 2*q.j*q.k-2*q.r*q.i;
-    
-    mat[6] = 2*q.i*q.k-2*q.r*q.j;
-    mat[7] = 2*q.j*q.k+2*q.r*q.i;
-    mat[8] = 1-2*q.i*q.i-2*q.j*q.j;
-}
-
-struct RigidBody{
-    //Constant quantities
-    double mass; //mass M
-    matrix Ibody; // I_body
-    matrix Ibodyinv; //I^-1_body inverse of I_body
-
-    //state variables
-    triple x; //x(t)
-    quaternion q; //q(t)
-    triple P; //P(t)
-    triple L; //L(t);
-
-    //derived quantities
-    matrix Iinv; //I^-1(t)
-    matrix R;
-    triple v; //v(t)
-    triple omega; //w(t)
-
-    //computed quantities
-    triple force; //F(t)
-    triple torque; //tau(t)
-};
 
 RigidBody Bodies[NBODIES];
 
-void State_to_Array(RigidBody *rb, double *y){
-
-    *y++ = rb->x.x;  //x component at position 0
-    *y++ = rb->x.y;  //x component at position 1
-    *y++ = rb->x.z; //x component at position 2
-
-    *y++ = rb->q.r;
-    *y++ = rb->q.i;
-    *y++ = rb->q.j;
-    *y++ = rb->q.k;
-
-    *y++ = rb->P.x;
-    *y++ = rb->P.y;
-    *y++ = rb->P.z;
-
-    *y++ = rb->L.x;
-    *y++ = rb->L.y;
-    *y++ = rb->L.z;
-
-}
-
-void Array_to_State(RigidBody *rb, double *y){
-    rb->x.x = *y++;
-    rb->x.y = *y++;
-    rb->x.z = *y++;
-
-    rb->q.r = *y++;
-    rb->q.i = *y++;
-    rb->q.j = *y++;
-    rb->q.k = *y++;
-
-    rb->P.x = *y++;
-    rb->P.y = *y++;
-    rb->P.z = *y++;
-
-    rb->L.x = *y++;
-    rb->L.y = *y++;
-    rb->L.z = *y++;
-
-    //compute auxiliary variables
-    //v(t) = P(t)/M   triplet/double
-    rb->v.x = rb->P.x/rb->mass;
-    rb->v.y = rb->P.y/rb->mass;
-    rb->v.z = rb->P.z/rb->mass;
-
-    rb->R = quaternion_to_matrix(normalize(rb->q));
+void InitStates(){
     
-    //I^-1(t)=R(t)*I^-1body*R(t)^T
-    rb->Iinv = multMatrices(multMatrices(rb->R, rb->Ibodyinv),transpose(rb->R));
-
-    //w(t) = I^-1(t)*L(t)
-    rb->omega = multMatVec(rb->Iinv,rb->L);
+    Bodies->mass=2;
     
+    //block
+    double heightBlock = 2;
+    double widthBlock = 2;
+    double depthBlock = 4;
+    
+    matrix Ib;
+    //block
+    Ib.pos[0][0] = ((heightBlock*heightBlock + widthBlock*widthBlock)*Bodies->mass)/12;
+    Ib.pos[0][1] = 0;
+    Ib.pos[0][2] = 0;
+    Ib.pos[1][0] = 0;
+    Ib.pos[1][1] = ((heightBlock*heightBlock + depthBlock*depthBlock)*Bodies->mass)/12;
+    Ib.pos[1][2] = 0;
+    Ib.pos[2][0] = 0;
+    Ib.pos[2][1] = 0;
+    Ib.pos[2][2] = ((widthBlock*widthBlock + depthBlock*depthBlock)*Bodies->mass)/12;
+    
+    Bodies->Ibody=Ib;
+    
+    matrix Ib_inv;
+    //block
+    Ib_inv.pos[0][0] = 12/((heightBlock*heightBlock + widthBlock*widthBlock)*Bodies->mass);
+    Ib_inv.pos[0][1] = 0;
+    Ib_inv.pos[0][2] = 0;
+    Ib_inv.pos[1][0] = 0;
+    Ib_inv.pos[1][1] = 12/((heightBlock*heightBlock + depthBlock*depthBlock)*Bodies->mass);
+    Ib_inv.pos[1][2] = 0;
+    Ib_inv.pos[2][0] = 0;
+    Ib_inv.pos[2][1] = 0;
+    Ib_inv.pos[2][2] = 12/((widthBlock*widthBlock + depthBlock*depthBlock)*Bodies->mass);
+    
+    Bodies->Ibodyinv = Ib_inv;
+    
+    Bodies->x.x = 0;
+    Bodies->x.y = 0;
+    Bodies->x.z = 0;
+    
+    Bodies->q.r = 0.5;
+    Bodies->q.i = 0.5;
+    Bodies->q.j = 0.5;
+    Bodies->q.k = 0.5;
+
+    Bodies->P.x = 0;
+    Bodies->P.y = 0;
+    Bodies->P.z = 0;
+
+    Bodies->L.x = 0.5;
+    Bodies->L.y = 1;
+    Bodies->L.z = 0.5;
+
+    Bodies->force.x=0;
+    Bodies->force.y=0;
+    Bodies->force.z=0;
+
+    Bodies->torque.x=0;
+    Bodies->torque.y=0;
+    Bodies->torque.z=0;
 }
 
 void Array_to_Bodies(double y[]){
@@ -139,50 +108,6 @@ void Bodies_to_Array(double y[]){
     }
 }
 
-void Compute_Force_and_Torque(double t, RigidBody *rb){
-   
-    
-    
-}
-
-void ddt_State_to_Array(RigidBody *rb, double *ydot){
-    //copy d/dt*x(t) = v(t) into ydot
-    *ydot++ = rb->v.x;
-    *ydot++ = rb->v.y;
-    *ydot++ = rb->v.z;
-
-    quaternion rotation_quat;
-    rotation_quat.r = 0;
-    rotation_quat.i = rb->omega.x;
-    rotation_quat.j = rb->omega.y;
-    rotation_quat.k = rb->omega.z;
-    
-    quaternion temp = mult_quat_to_quat(rotation_quat,rb->q);
-    
-    quaternion res;
-    res.r=0.5*temp.r;
-    res.i=0.5*temp.i;
-    res.j=0.5*temp.j;
-    res.k=0.5*temp.k;
-
-
-    *ydot++ = res.r;
-    *ydot++ = res.i;
-    *ydot++ = res.j;
-    *ydot++ = res.k;
-
-
-    // d/dt*P(t) = F(t)
-    *ydot++ = rb->force.x;
-    *ydot++ = rb->force.y;
-    *ydot++ = rb->force.z;
-
-    // d/dt*L(t) = tau(t)
-    *ydot++ = rb->torque.x;
-    *ydot++ = rb->torque.y;
-    *ydot++ = rb->torque.z;
-}
-
 void dydt(double t, double y[], double ydot[]){
     //put data in y[] into Bodies[]
     Array_to_Bodies(y);
@@ -194,41 +119,49 @@ void dydt(double t, double y[], double ydot[]){
 
 void display( GLFWwindow* window )
 {
-    /*
-    GLfloat front_color[] = {0, 1, 0, 1};
-    GLfloat back_color[] = {0, 0, 1, 1};
-    glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-    glMaterialfv(GL_FRONT, GL_DIFFUSE, front_color);
-    glMaterialfv(GL_BACK, GL_DIFFUSE, back_color);
-    */
-    
     double y0[STATE_SIZE*NBODIES];
-    
     InitStates();
+    
+    //middle point method
+    //x(t + h) = x(t) + h*f( x(t) + h/2*f( x(t) ) )
     double h=1./10.;
     for(double t = 0; t<60.0;t+=h){
+        //push x(t) into y0
         Bodies_to_Array(y0);
         double ydot1[STATE_SIZE*NBODIES];
         
+        //compute and push f( x(t) ) into ydot1
         dydt(t/1000,y0,ydot1);
         
+        //multiply f(x(t)) by h/2 and add x(t)
         for(int i = 0; i<13; i++){
             ydot1[i]*=h/2;
             ydot1[i]+=y0[i];
         }
+        
         double ydot2[STATE_SIZE*NBODIES];
+        
+        //compute f( x(t) + h/2*f(x(t))) and push it into ydot2
         dydt(t/1000,ydot1,ydot2);
+        
+        //multiply ydot2 by h and add x(t)
         for(int i = 0; i<13; i++){
             ydot2[i]*=h;
             ydot2[i]+=y0[i];
         }
+        //ydot2 contains Y(t + h)
         
+        //copy d/dt*Y(t+h) into state variables
+        Array_to_Bodies(ydot2);
+        
+        //form quaternion to rotate an object
         quaternion q;
         q.r = ydot2[3];
         q.i = ydot2[4];
         q.j = ydot2[5];
         q.k = ydot2[6];
 
+        //form position vector to translate an object
         GLfloat centerPosX = ydot2[0];
         GLfloat centerPosY = ydot2[1];
         GLfloat centerPosZ = ydot2[2];
@@ -243,20 +176,17 @@ void display( GLFWwindow* window )
         glMatrixMode(GL_MODELVIEW);
         glLoadIdentity();
         gluLookAt(0, 50, 0, 0, 0, 0, 0, 0, 1);
-        
-        // Draw stuff
         glClearColor(0.0, 1.0, 0.0, 0.0);
         glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-        glColor3f (1.0, 1.0, 1.0);
-        //glLoadIdentity();
-        //glTranslatef(centerPosX-2,centerPosY,centerPosZ);
+        //translate an object
+        glTranslatef(centerPosX,centerPosY,centerPosZ);
         
+        //rotate an object
         glRotatef(2*acos(q.r)*180/M_PI, q.i, q.j, q.k);
+        
+        //draw an object
         glPolygonMode(GL_FRONT, GL_FILL);
-        
-        glRotatef(90, 0, 1, 0);
-        
         drawBlock();
 
         // Update Screen
@@ -265,180 +195,22 @@ void display( GLFWwindow* window )
         // Check for any input, or window movement
         glfwPollEvents();
         
-        
-        
-        //copy d/dt*Y(t+1/30) into state variables
-        Array_to_Bodies(ydot2);
-        
+        // print logs
         double yShow[STATE_SIZE*NBODIES];
         Bodies_to_Array(yShow);
-        cout << "quaternion" << yShow[3] << " " << yShow[4]  << " " << yShow[5]  << " " << yShow[6]  << "\n";
-        cout << "pos" << yShow[0] << " " << yShow[1] << " " << yShow[2] << "\n";
-        cout << "P: " << yShow[7] << " " << yShow[8] << " " << yShow[9] << "\n";
-        cout << "L: " << yShow[10] << " " << yShow[11] << " " << yShow[12] << "\n";
+        cout << setprecision(20);
+        cout << "quaternions: \n" << yShow[3] << " \n" << yShow[4]  << " \n" << yShow[5]  << " \n" << yShow[6]  << "\n";
+        cout << "pos: \n" << yShow[0] << "\n" << yShow[1] << "\n" << yShow[2] << "\n";
+        cout << "P: \n" << yShow[7] << "\n" << yShow[8] << "\n" << yShow[9] << "\n";
+        cout << "L: \n" << yShow[10] << "\n" << yShow[11] << "\n" << yShow[12] << "\n";
         triple invariant= multMatVec(Bodies->Iinv, Bodies->omega);
-        cout << "invariant" << invariant.x*Bodies->omega.x + invariant.y*Bodies->omega.y +invariant.z*Bodies->omega.z << " " << invariant.z*Bodies->omega.z<<  "\n" ;
-
+        cout <<"invariant: " << invariant.x*Bodies->omega.x + invariant.y*Bodies->omega.y +invariant.z*Bodies->omega.z << "\n";
     }
-
-}
-
-
-
-int main(int argc, char** argv)
-{
-    GLFWwindow* window = initWindow(1024, 620);
-    if( NULL != window )
-    {
-        
-        display( window );
-    }
-    glfwDestroyWindow(window);
-    glfwTerminate();
-    return 0;
-}
-
-
-void InitStates(){
-    Bodies->mass=2;
-    //cube constant
-    double sideLength = 2;
-    //cone constants
-    double coneRadius = 1;
-    double coneHeight = 2;
-    //cylinder constants
-    double cylinderHeight = 2;
-    double cylinderRadius = 1;
-    //block
-    double heightBlock = 2;
-    double widthBlock = 2;
-    double depthBlock = 4;
-    
-    matrix Ib;
-    //cube
-    
-    Ib.pos[0][0] = Bodies->mass*sideLength*sideLength/6;
-    Ib.pos[0][1] = 0;
-    Ib.pos[0][2] = 0;
-    Ib.pos[1][0] = 0;
-    Ib.pos[1][1] = Bodies->mass*sideLength*sideLength/6;
-    Ib.pos[1][2] = 0;
-    Ib.pos[2][0] = 0;
-    Ib.pos[2][1] = 0;
-    Ib.pos[2][2] = Bodies->mass*sideLength*sideLength/6;
-     
-    //cone
-    /*
-    Ib.pos[0][0] = 3.0/5.0*Bodies->mass*(coneRadius*coneRadius/4+coneHeight*coneHeight);
-    Ib.pos[0][1] = 0;
-    Ib.pos[0][2] = 0;
-    Ib.pos[1][0] = 0;
-    Ib.pos[1][1] = 3.0/5.0*Bodies->mass*(coneRadius*coneRadius/4+coneHeight*coneHeight);
-    Ib.pos[1][2] = 0;
-    Ib.pos[2][0] = 0;
-    Ib.pos[2][1] = 0;
-    Ib.pos[2][2] = 3.0/10.0*Bodies->mass*coneRadius*coneRadius;
-    */
-    
-    //cylinder
-    /*
-    Ib.pos[0][0] = 1.0/12.0*Bodies->mass*(3.0*cylinderRadius*cylinderRadius+cylinderHeight*cylinderHeight);
-    Ib.pos[0][1] = 0;
-    Ib.pos[0][2] = 0;
-    Ib.pos[1][0] = 0;
-    Ib.pos[1][1] = 1.0/12.0*Bodies->mass*(3.0*cylinderRadius*cylinderRadius+cylinderHeight*cylinderHeight);
-    Ib.pos[1][2] = 0;
-    Ib.pos[2][0] = 0;
-    Ib.pos[2][1] = 0;
-    Ib.pos[2][2] = Bodies->mass*cylinderRadius*cylinderRadius/2.0;
-    */
-    Bodies->Ibody=Ib;
-    
-    
-    matrix Ib_inv;
-    //cube
-    /*
-    Ib_inv.pos[0][0] = 6/(sideLength*sideLength*Bodies->mass);
-    Ib_inv.pos[0][1] = 0;
-    Ib_inv.pos[0][2] = 0;
-    Ib_inv.pos[1][0] = 0;
-    Ib_inv.pos[1][1] = 6/(sideLength*sideLength*Bodies->mass);
-    Ib_inv.pos[1][2] = 0;
-    Ib_inv.pos[2][0] = 0;
-    Ib_inv.pos[2][1] = 0;
-    Ib_inv.pos[2][2] = 6/(sideLength*sideLength*Bodies->mass);
-    */
-    //block
-    
-    Ib_inv.pos[0][0] = 12/((heightBlock*heightBlock + widthBlock*widthBlock)*Bodies->mass);
-    Ib_inv.pos[0][1] = 0;
-    Ib_inv.pos[0][2] = 0;
-    Ib_inv.pos[1][0] = 0;
-    Ib_inv.pos[1][1] = 6/((heightBlock*heightBlock + depthBlock*depthBlock)*sideLength*sideLength*Bodies->mass);
-    Ib_inv.pos[1][2] = 0;
-    Ib_inv.pos[2][0] = 0;
-    Ib_inv.pos[2][1] = 0;
-    Ib_inv.pos[2][2] = 6/((widthBlock*widthBlock + depthBlock*depthBlock)*sideLength*sideLength*Bodies->mass);
-    
-    
-    //cone
-    /*
-    Ib_inv.pos[0][0] = 5.0/(3.0*Bodies->mass*(coneRadius*coneRadius/4+coneHeight*coneHeight));
-    Ib_inv.pos[0][1] = 0;
-    Ib_inv.pos[0][2] = 0;
-    Ib_inv.pos[1][0] = 0;
-    Ib_inv.pos[1][1] = 5.0/(3.0*Bodies->mass*(coneRadius*coneRadius/4+coneHeight*coneHeight));
-    Ib_inv.pos[1][2] = 0;
-    Ib_inv.pos[2][0] = 0;
-    Ib_inv.pos[2][1] = 0;
-    Ib_inv.pos[2][2] = 10.0/(3.0*Bodies->mass*coneRadius*coneRadius);
-    */
-    
-    //cylinder
-    /*
-    Ib_inv.pos[0][0] = 12.0/(Bodies->mass*(3.0*cylinderRadius*cylinderRadius+cylinderHeight*cylinderHeight));
-    Ib_inv.pos[0][1] = 0;
-    Ib_inv.pos[0][2] = 0;
-    Ib_inv.pos[1][0] = 0;
-    Ib_inv.pos[1][1] = 12.0/(Bodies->mass*(3.0*cylinderRadius*cylinderRadius+cylinderHeight*cylinderHeight));
-    Ib_inv.pos[1][2] = 0;
-    Ib_inv.pos[2][0] = 0;
-    Ib_inv.pos[2][1] = 0;
-    Ib_inv.pos[2][2] = 2.0/(Bodies->mass*cylinderRadius*cylinderRadius);
-    */
-    
-    Bodies->Ibodyinv = Ib_inv;
-    Bodies->x.x = 0;
-    Bodies->x.y = 0;
-    Bodies->x.z = 0;
-    
-    Bodies->q.r = 0.5;
-    Bodies->q.i = 0.5;
-    Bodies->q.j = 0.5;
-    Bodies->q.k = 0.5;
-
-    Bodies->P.x = 0;
-    Bodies->P.y = 0;
-    Bodies->P.z = 0;
-
-    Bodies->L.x = 1;
-    Bodies->L.y = 1;
-    Bodies->L.z = 1;
-
-    Bodies->force.x=0;
-    Bodies->force.y=0;
-    Bodies->force.z=0;
-
-    Bodies->torque.x=0;
-    Bodies->torque.y=0;
-    Bodies->torque.z=0;
 }
 
 
 GLFWwindow* initWindow(const int resX, const int resY)
 {
-    
-    
     if(!glfwInit())
     {
         fprintf(stderr, "Failed to initialize GLFW\n");
@@ -462,79 +234,15 @@ GLFWwindow* initWindow(const int resX, const int resY)
     // Get info of GPU and supported OpenGL version
     printf("Renderer: %s\n", glGetString(GL_RENDERER));
     printf("OpenGL version supported %s\n", glGetString(GL_VERSION));
-    
-
-    
-
-    
-    
 
     glEnable(GL_DEPTH_TEST); // Depth Testing
     glDepthFunc(GL_LEQUAL);
     glDisable(GL_CULL_FACE);
     glCullFace(GL_BACK);
-    
-    /*
-    float pos[4] = {0, 3, 0.5, 1.5};
-    float dir[3] = {-1, -1, -1};
-    GLfloat mat_specular[] = {1, 1, 1, 1};
-    glEnable(GL_LIGHTING);
-    glEnable(GL_LIGHT0);
-    glLightfv(GL_LIGHT0, GL_POSITION, pos);
-    glLightfv(GL_LIGHT0, GL_SPOT_DIRECTION, dir);
-    glMaterialfv(GL_FRONT, GL_SPECULAR, mat_specular);
-    glMaterialf(GL_FRONT, GL_SHININESS, 128.0);
-    glLightModeli(GL_LIGHT_MODEL_TWO_SIDE, GL_TRUE);
-    */
+
     return window;
 }
 
-
-void drawCube()
-{
-    glColor3f(1,0,0); //red
-    glBegin (GL_QUADS);
-        glVertex3f (1.0, 1.0, 1.0);
-        glVertex3f (-1.0, 1.0, 1.0);
-        glVertex3f (-1.0, -1.0, 1.0);
-        glVertex3f (1.0, -1.0, 1.0);
-    glEnd();
-    glColor3f(0,1,0); //green
-    glBegin (GL_QUADS);
-        glVertex3f (1.0, 1.0, -1.0);
-        glVertex3f (1.0, -1.0, -1.0);
-        glVertex3f (-1.0, -1.0, -1.0);
-        glVertex3f (-1.0, 1.0, -1.0);
-    glEnd();
-    glColor3f(0,0,1);
-    glBegin (GL_QUADS);
-        glVertex3f (-1.0, 1.0, 1.0);
-        glVertex3f (-1.0, 1.0, -1.0);
-        glVertex3f (-1.0, -1.0, -1.0);
-        glVertex3f (-1.0, -1.0, 1.0);
-    glEnd();
-    glColor3f(1,1,0);
-    glBegin (GL_QUADS);
-        glVertex3f (1.0, 1.0, 1.0);
-        glVertex3f (1.0, -1.0, 1.0);
-        glVertex3f (1.0, -1.0, -1.0);
-        glVertex3f (1.0, 1.0, -1.0);
-    glEnd();
-    glColor3f(1,0,1);
-    glBegin (GL_QUADS);
-        glVertex3f (-1.0, 1.0, -1.0);
-        glVertex3f (-1.0, 1.0, 1.0);
-        glVertex3f (1.0, 1.0, 1.0);
-        glVertex3f (1.0, 1.0, -1.0);
-    glEnd();
-    glColor3f(1,1,1);
-    glBegin(GL_QUADS);
-        glVertex3f (-1.0, -1.0, -1.0);
-        glVertex3f (1.0, -1.0, -1.0);
-        glVertex3f (1.0, -1.0, 1.0);
-        glVertex3f (-1.0, -1.0, 1.0);
-    glEnd();
-}
 
 void drawBlock()
 {
@@ -545,7 +253,7 @@ void drawBlock()
         glVertex3f (-2.0, -1.0, 1.0);
         glVertex3f (2.0, -1.0, 1.0);
     glEnd();
-    glColor3f(0,1,0); //green
+    glColor3f(0,0,0); //green
     glBegin (GL_QUADS);
         glVertex3f (2.0, 1.0, -1.0);
         glVertex3f (2.0, -1.0, -1.0);
@@ -582,35 +290,21 @@ void drawBlock()
     glEnd();
 }
 
-
-void drawCone(){
-    glutSolidCone(1, 2, 100, 100);
-    glTranslatef(0, 0, 1/2);
-}
-
-void drawCylinder(){
-    GLUquadricObj *quadratic;
-    quadratic = gluNewQuadric();
-    gluCylinder(quadratic, 1, 1, 2, 100, 100);
-}
-
-matrix Star(triple a){
-    matrix star;
-    star.pos[0][0] = 0;
-    star.pos[0][1] = -(a.z);
-    star.pos[0][2] = a.y;
-    star.pos[1][0] = a.z;
-    star.pos[1][1] = 0;
-    star.pos[1][2] = -(a.x);
-    star.pos[2][0] = -(a.y);
-    star.pos[2][1] = a.x;
-    star.pos[2][2] =0;
-    return star;
-}
-
 void controls(GLFWwindow* window, int key, int scancode, int action, int mods)
 {
     if(action == GLFW_PRESS)
         if(key == GLFW_KEY_ESCAPE)
             glfwSetWindowShouldClose(window, GL_TRUE);
+}
+
+int main(int argc, char** argv)
+{
+    GLFWwindow* window = initWindow(1024, 620);
+    if( NULL != window )
+    {
+        display( window );
+    }
+    glfwDestroyWindow(window);
+    glfwTerminate();
+    return 0;
 }

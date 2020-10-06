@@ -1,15 +1,15 @@
 //
-//  matrix.cpp
+//  structsOperations.cpp
 //  simulation
 //
 //  Created by Максим on 24.09.2020.
 //  Copyright © 2020 Максим. All rights reserved.
 //
 
-#include "matrix.hpp"
+#include "structsOperations.hpp"
 #include "math.h"
 
-//correct
+
 matrix multMatrices(matrix A, matrix B){
     matrix mul;
     for(int i = 0; i<3; i++){
@@ -23,7 +23,7 @@ matrix multMatrices(matrix A, matrix B){
     return mul;
 }
 
-//correct
+
 matrix transpose(matrix A){
     matrix transpose;
     for(int i = 0; i<3; i++){
@@ -34,7 +34,7 @@ matrix transpose(matrix A){
     return transpose;
 }
 
-//correct
+
 triple multMatVec(matrix A, triple v){
     triple res;
     res.x=A.pos[0][0]*v.x + A.pos[0][1]*v.y + A.pos[0][2]*v.z;
@@ -43,7 +43,7 @@ triple multMatVec(matrix A, triple v){
     return res;
 }
 
-//correct
+
 matrix quaternion_to_matrix(const quaternion & q){
     matrix m;
     m.pos[0][0] = 1-2*q.j*q.j-2*q.k*q.k;
@@ -58,7 +58,7 @@ matrix quaternion_to_matrix(const quaternion & q){
     return m;
 }
 
-//correct
+
 quaternion normalize(const quaternion & q){
     quaternion res;
     double len = sqrt(q.r*q.r+q.i*q.i+q.j*q.j+q.k*q.k);
@@ -69,7 +69,7 @@ quaternion normalize(const quaternion & q){
     return res;
 }
 
-//correct
+
 quaternion matrix_to_quaternion(const matrix &m){
     quaternion q;
     double tr,s;
@@ -120,7 +120,7 @@ quaternion matrix_to_quaternion(const matrix &m){
     return q;
 }
 
-//correct
+
 quaternion mult_quat_to_quat(const quaternion & q1, const quaternion & q2){
     quaternion res;
     res.r = q1.r*q2.r - q1.i*q2.i - q1.j*q2.j - q1.k*q2.k;
