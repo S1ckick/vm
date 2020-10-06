@@ -6,18 +6,15 @@
 //  Copyright © 2020 Максим. All rights reserved.
 //
 
-#define GL_SILENCE_DEPRECATION
 #include <iostream>
 #include <iomanip>
 #include <GL/glew.h>
-#include <GLUT/glsmap.h>
 #include <GLUT/GLUT.h>
 #include <GLFW/glfw3.h>
 
 #include "structsOperations/structsOperations.hpp"
 #include "RigidBody/RigidBody.hpp"
 
-#include <cstdio>
 #include <math.h>
 using namespace std;
 
