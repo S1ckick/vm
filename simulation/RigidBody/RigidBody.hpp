@@ -14,7 +14,7 @@ typedef struct{
     //Constant quantities
     double mass; //mass M
     matrix Ibodyinv; //I^-1_body inverse of I_body
-
+    
     //state variables
     triple x; //x(t)
     quaternion q; //q(t)
@@ -30,6 +30,11 @@ typedef struct{
     //computed quantities
     triple force; //F(t)
     triple torque; //tau(t)
+    
+    //block parameters
+    double heightBlock;
+    double widthBlock;
+    double depthBlock;
 } RigidBody;
 
 void State_to_Array(RigidBody *rb, double *y);

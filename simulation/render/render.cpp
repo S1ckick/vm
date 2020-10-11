@@ -18,45 +18,45 @@ void drawBlock()
 {
     glColor3f(1,0,0); //red
     glBegin (GL_QUADS);
-        glVertex3f (2.0, 1.0, 1.0);
-        glVertex3f (-2.0, 1.0, 1.0);
-        glVertex3f (-2.0, -1.0, 1.0);
-        glVertex3f (2.0, -1.0, 1.0);
+        glVertex3f(Body.widthBlock, Body.depthBlock, Body.heightBlock);
+        glVertex3f(-Body.widthBlock, Body.depthBlock, Body.heightBlock);
+        glVertex3f(-Body.widthBlock, -Body.depthBlock, Body.heightBlock);
+        glVertex3f(Body.widthBlock, -Body.depthBlock, Body.heightBlock);
     glEnd();
     glColor3f(0,0,0); //green
     glBegin (GL_QUADS);
-        glVertex3f (2.0, 1.0, -1.0);
-        glVertex3f (2.0, -1.0, -1.0);
-        glVertex3f (-2.0, -1.0, -1.0);
-        glVertex3f (-2.0, 1.0, -1.0);
+        glVertex3f(Body.widthBlock, Body.depthBlock, -Body.heightBlock);
+        glVertex3f(Body.widthBlock, -Body.depthBlock, -Body.heightBlock);
+        glVertex3f(-Body.widthBlock, -Body.depthBlock, -Body.heightBlock);
+        glVertex3f(-Body.widthBlock, Body.depthBlock, -Body.heightBlock);
     glEnd();
     glColor3f(0,0,1);
     glBegin (GL_QUADS);
-        glVertex3f (-2.0, 1.0, 1.0);
-        glVertex3f (-2.0, 1.0, -1.0);
-        glVertex3f (-2.0, -1.0, -1.0);
-        glVertex3f (-2.0, -1.0, 1.0);
+        glVertex3f(-Body.widthBlock, Body.depthBlock, Body.heightBlock);
+        glVertex3f(-Body.widthBlock, Body.depthBlock, -Body.heightBlock);
+        glVertex3f(-Body.widthBlock, -Body.depthBlock, -Body.heightBlock);
+        glVertex3f(-Body.widthBlock, -Body.depthBlock, Body.heightBlock);
     glEnd();
     glColor3f(1,1,0);
     glBegin (GL_QUADS);
-        glVertex3f (2.0, 1.0, 1.0);
-        glVertex3f (2.0, -1.0, 1.0);
-        glVertex3f (2.0, -1.0, -1.0);
-        glVertex3f (2.0, 1.0, -1.0);
+        glVertex3f(Body.widthBlock, Body.depthBlock, Body.heightBlock);
+        glVertex3f(Body.widthBlock, -Body.depthBlock, Body.heightBlock);
+        glVertex3f(Body.widthBlock, -Body.depthBlock, -Body.heightBlock);
+        glVertex3f(Body.widthBlock, Body.depthBlock, -Body.heightBlock);
     glEnd();
     glColor3f(1,0,1);
     glBegin (GL_QUADS);
-        glVertex3f (-2.0, 1.0, -1.0);
-        glVertex3f (-2.0, 1.0, 1.0);
-        glVertex3f (2.0, 1.0, 1.0);
-        glVertex3f (2.0, 1.0, -1.0);
+        glVertex3f(-Body.widthBlock, Body.depthBlock, -Body.heightBlock);
+        glVertex3f(-Body.widthBlock, Body.depthBlock, Body.heightBlock);
+        glVertex3f(Body.widthBlock, Body.depthBlock, Body.heightBlock);
+        glVertex3f(Body.widthBlock, Body.depthBlock, -Body.heightBlock);
     glEnd();
     glColor3f(1,1,1);
     glBegin(GL_QUADS);
-        glVertex3f (-2.0, -1.0, -1.0);
-        glVertex3f (2.0, -1.0, -1.0);
-        glVertex3f (2.0, -1.0, 1.0);
-        glVertex3f (-2.0, -1.0, 1.0);
+        glVertex3f(-Body.widthBlock, -Body.depthBlock, -Body.heightBlock);
+        glVertex3f(Body.widthBlock , -Body.depthBlock, -Body.heightBlock);
+        glVertex3f(Body.widthBlock, -Body.depthBlock, Body.heightBlock);
+        glVertex3f(-Body.widthBlock, -Body.depthBlock, Body.heightBlock);
     glEnd();
 }
 
@@ -89,8 +89,9 @@ void Display(){
     //logs
     std::cout << std::setprecision(20);
     std::cout << "quaternion: " << Body.q.r << " " << Body.q.i << " " << Body.q.j << " "<<Body.q.k << "\n";
-    triple invariant = multMatVec(Body.Iinv, Body.omega);
-    std::cout << "invariant: " << invariant.x*Body.omega.x + invariant.y*Body.omega.y + invariant.z*Body.omega.z << "\n\n";
+    //E_k = 1/2*w^T*L
+    double kineticEnergy = (double)(Body.omega.x*Body.L.x + Body.omega.y*Body.L.y + Body.omega.z*Body.L.z)/2.0;
+    std::cout << "kineticEnergy: " << kineticEnergy << "\n\n";
 }
 
 void Idle() {

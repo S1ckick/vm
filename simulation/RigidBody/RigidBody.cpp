@@ -209,21 +209,21 @@ void InitStates(RigidBody *body){
     body->mass=2;
     
     //block
-    double heightBlock = 2;
-    double widthBlock = 2;
-    double depthBlock = 4;
+    body->heightBlock = 1;
+    body->widthBlock = 2;
+    body->depthBlock = 4;
     
     matrix Ib_inv;
     //block
-    Ib_inv.pos[0][0] = 12/((heightBlock*heightBlock + widthBlock*widthBlock)*body->mass);
+    Ib_inv.pos[0][0] = 12/((body->heightBlock*body->heightBlock + body->widthBlock*body->widthBlock)*body->mass);
     Ib_inv.pos[0][1] = 0;
     Ib_inv.pos[0][2] = 0;
     Ib_inv.pos[1][0] = 0;
-    Ib_inv.pos[1][1] = 12/((heightBlock*heightBlock + depthBlock*depthBlock)*body->mass);
+    Ib_inv.pos[1][1] = 12/((body->heightBlock*body->heightBlock + body->depthBlock*body->depthBlock)*body->mass);
     Ib_inv.pos[1][2] = 0;
     Ib_inv.pos[2][0] = 0;
     Ib_inv.pos[2][1] = 0;
-    Ib_inv.pos[2][2] = 12/((widthBlock*widthBlock + depthBlock*depthBlock)*body->mass);
+    Ib_inv.pos[2][2] = 12/((body->widthBlock*body->widthBlock + body->depthBlock*body->depthBlock)*body->mass);
     
     body->Ibodyinv = Ib_inv;
     
@@ -240,7 +240,7 @@ void InitStates(RigidBody *body){
     body->P.y = 0;
     body->P.z = 0;
 
-    body->L.x = 0.5;
+    body->L.x = 10;
     body->L.y = 4;
     body->L.z = 2;
 
